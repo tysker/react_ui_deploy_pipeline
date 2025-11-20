@@ -108,9 +108,3 @@ CI ensures build succeeds and tests pass before deploying.
 MIT License — see the `LICENSE` file for details.
 
 ---
-
-## 🙌 Contributing
-
-Pull requests welcome. For major changes, open an issue first.
-
-```
