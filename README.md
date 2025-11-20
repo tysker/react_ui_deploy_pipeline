@@ -1,100 +1,116 @@
-# SchoolHacks App
 
-## Frontend Deployment
+# 🎨 Frontend Deployment Pipeline
 
-### 1. Create a new file called nginx.conf and add the following code
+A streamlined pipeline for deploying frontend applications (React, Vue or similar) using Docker, CI/CD workflows and automated deployment to a remote server.
 
+## 🧰 Tech Stack
+
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)  
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)  
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=white)  
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+
+---
+
+## 📌 Overview
+
+This repository sets up:
+
+- Build and test pipeline for your frontend app  
+- Docker multi-stage build (build + serve)  
+- Automated CI/CD (push on main triggers build → image → deploy)  
+- Deployment to remote server (Droplet/VPS)  
+- Reverse-proxy and HTTPS routing (with Nginx or Traefik)  
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the repo  
 ```bash
-server {
-    listen       80;
-    listen  [::]:80;
-    server_name  localhost;
+git clone https://github.com/tysker/schoolhack-deployment-pipeline.git
+cd schoolhack-deployment-pipeline
+````
 
-    location / {
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-        try_files $uri $uri/ /index.html;
-    }
-}
+### 2. Configure environment (if needed)
+
+Create a `.env` file with variables like:
+
+```
+DOCKER_HUB_USER=<your_dockerhub_user>
+DOCKER_HUB_REPO=<your_repo_name>
+DOMAIN=<your_domain>
 ```
 
-### 2. Create a new file called Dockerfile and add the following code
+### 3. Build & deploy locally
 
 ```bash
-# First stage: build the react app
-# FROM tiangolo/node-frontend:10 as build-stage
-FROM node:18 as build-stage
-WORKDIR /app
-COPY package*.json /app/
-RUN npm install
-COPY . .
-RUN npm run build
-
-# Second stage: use the build output from the first stage with nginx
-FROM nginx:1.25
-COPY --from=build-stage /app/dist/ /usr/share/nginx/html
-
-# Copy the default nginx.conf to get the try-files directive to work with react router
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+docker build -t yourapp-ui .
+docker run -p 80:80 yourapp-ui
 ```
-### 3. Add both files to your frontend root folder (same level as package.json) and push your code to your git repo
 
-**The above requires that you have already set up a github workflow (pipeline) for your frontend project.**
+### 4. CI/CD workflow
 
-### 4. Exchange the schoolhack image in the docker-compose file with your own image
+Push to `main` branch → GitHub Actions builds & tests → builds Docker image → pushes to Docker Hub → deploys to your server automatically.
+
+---
+
+## 🖼️ Architecture Diagram
+
+```
+Developer → GitHub Repo
+     ↓
+GitHub Actions → build & test → docker image → push
+     ↓
+Remote Server (VPS) ← docker pull → container runs
+     ↓
+Browser users → Nginx/Traefik → your UI application
+```
+
+---
+
+## 📄 Pipeline Details
+
+* Multi-stage Dockerfile: build phase (Node) + serve phase (Nginx)
+* `docker-compose.yml` for local dev & `docker-compose.prod.yml` for production
+* GitHub Actions workflow file `.github/workflows/deploy.yml`
+* Environment variables managed via GitHub Secrets and `.env`
+* Optional: rollback strategy, version tagging
+
+---
+
+## 🧪 Testing & Linting
+
+In your frontend project directory:
 
 ```bash
-  image: <your_docker_hub_username>/<your_docker_hub_repo_name>:<your_docker_hub_tag>
+npm install
+npm run lint
+npm run test
+npm run build
 ```
 
-**Remember to replace everything related to schoolhack with your own project name**
+CI ensures build succeeds and tests pass before deploying.
 
-## How to use it
+---
 
-###  Run Docker
+## ⚠️ Notes & Considerations
 
-```bash
-  docker-compose up -d
+* Ensure your domain’s DNS record points to your server
+* Make sure port 80/443 are open on the remote server
+* Keep your Docker Hub credentials and secrets safe
+* For production: use secure image tags (no `latest`) and monitor container health
+
+---
+
+## 📜 License
+
+MIT License — see the `LICENSE` file for details.
+
+---
+
+## 🙌 Contributing
+
+Pull requests welcome. For major changes, open an issue first.
+
 ```
-
-### Stop Docker
-
-```bash
-  docker-compose down
-```
-
-### Access Traefik Dashboard through browser
-
-```bash
-  traefik.<your_domain>
-```
-
-### Access Your Rest Api
-
-```bash
-  <your_domain>/<your_api_path> (example: api.3sem.dk/api or restapi.3sem.dk/api)
-```
-
-### Reset DB data installation
-
-(-v) // remove volumes
-```bash
- docker-compose down -v 
-```
-
-```bash
- sudo  rm -rf ./data
-```
-
-### Connect your remote database to your local pgAdmin container
-
-```bash
-  <your_domain>:5432
-```
-
-### Testing the api
-
-- use the http file inside the utility folder to test the api
-
-***
-
